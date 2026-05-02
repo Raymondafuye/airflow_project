@@ -7,7 +7,7 @@ Add your screenshots here:
 - failure_email.png     — Gmail notification received on task failure
 - <img width="837" height="458" alt="image" src="https://github.com/user-attachments/assets/dd6cdc78-5031-4f81-8f40-11d47eb6a0d1" />
 
-- backfill.png          — Grid view showing backfill runs across multiple dates
+- backfill.png          
 - architecture.png      — Full architecture diagram (Postgres → Airbyte → BigQuery → dbt)
   <img width="543" height="294" alt="image" src="https://github.com/user-attachments/assets/e83d4521-40d8-4c5a-aae4-af054a63d148" />
 
