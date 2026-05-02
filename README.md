@@ -55,7 +55,7 @@ dbt_run_staging ──► dbt_test_staging
 | `dbt_source_freshness` | `BashOperator` | Validates raw BigQuery tables were updated within freshness thresholds |
 | `dbt_run_staging` | `BashOperator` | Runs dbt models tagged `staging` cleans and standardises raw data |
 | `dbt_test_staging` | `BashOperator` | Runs dbt tests on staging models (not_null, unique, accepted_values) |
-| `dbt_run_intermediate` | `BashOperator` | Runs dbt models tagged `intermediate` — joins and enriches staging data |
+| `dbt_run_intermediate` | `BashOperator` | Runs dbt models tagged `intermediate` joins and enriches staging data |
 | `dbt_run_marts` | `BashOperator` | Runs dbt models tagged `marts` produces business-facing fact and dimension tables |
 | `dbt_test_marts` | `BashOperator` | Runs dbt tests on mart models to validate business logic |
 | `dbt_snapshot` | `BashOperator` | Runs dbt snapshots to track slowly changing dimensions (SCD Type 2) |
@@ -64,7 +64,7 @@ dbt_run_staging ──► dbt_test_staging
 
 
 ### Why one Airbyte connection for all tables?
-BeejanRide uses a single Airbyte connection (Postgres → BigQuery) that syncs all tables as streams. Triggering one sync job loads all tables atomically no partial loads, no coordination overhead between per-table triggers.
+BeejanRide uses a single Airbyte connection (Postgres to BigQuery) that syncs all tables as streams. Triggering one sync job loads all tables atomically no partial loads, no coordination overhead between per-table triggers.
 
 ### Idempotency
 Idempotency ensures re-running a DAG for the same date produces the same result without duplicating data:
