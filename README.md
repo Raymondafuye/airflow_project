@@ -1,31 +1,14 @@
 # BeejanRide ELT Orchestration — Airflow Project
 
-Orchestration layer for the BeejanRide data platform. Manages the full ELT pipeline from Airbyte ingestion through dbt transformation to BigQuery, running daily at 06:00 UTC.
+Orchestration layer for the BeejanRide data platform. Manages the full ELT pipeline from Airbyte ingestion through dbt transformation to BigQuery, running daily at 06:00.
 
-> **Related repo:** [modeling_airbyte_dbt_bigquery](https://github.com/raymondafuye/modeling_airbyte_dbt_bigquery) — contains the dbt project, sources, models, and snapshots.
+> **Related repo:** [modeling_airbyte_dbt_bigquery](https://github.com/raymondafuye/modeling_airbyte_dbt_bigquery) contains the dbt project, sources, models, and snapshots.
 
 ---
 
 ## Architecture
 
-```
-Postgres (source)
-      │
-      ▼
-Airbyte Cloud ──── triggers via API ────► Airflow (CeleryExecutor)
-      │                                         │
-      │ syncs all tables as streams             │ orchestrates
-      ▼                                         ▼
-BigQuery (raw)                        ┌─────────────────────┐
-      │                               │  beejanride_elt_     │
-      │                               │  pipeline DAG        │
-      ▼                               │                      │
-dbt staging  ──► dbt intermediate     │  Daily @ 06:00 UTC   │
-      │                ▼              └─────────────────────┘
-      │          dbt marts
-      │                ▼
-      └──────► dbt snapshots (SCD)
-```
+ <img width="543" height="294" alt="image" src="https://github.com/user-attachments/assets/e83d4521-40d8-4c5a-aae4-af054a63d148" />
 
 ### Infrastructure
 | Component | Technology |
@@ -41,9 +24,8 @@ dbt staging  ──► dbt intermediate     │  Daily @ 06:00 UTC   │
 ---
 
 ## DAG: `beejanride_elt_pipeline`
-
-**Schedule:** `0 6 * * *` (daily at 06:00 UTC)  
-**Catchup:** enabled — backfills from `2025-01-01`  
+ 
+**Catchup:** enabled backfills from `2025-01-01`  
 **Max active runs:** 1
 
 ### Task Graph
@@ -68,50 +50,27 @@ dbt_run_staging ──► dbt_test_staging
 
 | Task | Operator | Description |
 |------|----------|-------------|
-| `airbyte_trigger_sync` | `AirbyteTriggerSyncOperator` | Triggers Airbyte sync — pulls all 6 tables (cities, drivers, driver_status_events, payments, riders, trips) from Postgres into BigQuery |
+| `airbyte_trigger_sync` | `AirbyteTriggerSyncOperator` | Triggers Airbyte sync pulls all 6 tables (cities, drivers, driver_status_events, payments, riders, trips) from Postgres into BigQuery |
 | `airbyte_wait_sync` | `AirbyteJobSensor` | Polls Airbyte every 30s until sync succeeds. Timeout: 1 hour |
 | `dbt_source_freshness` | `BashOperator` | Validates raw BigQuery tables were updated within freshness thresholds |
-| `dbt_run_staging` | `BashOperator` | Runs dbt models tagged `staging` — cleans and standardises raw data |
+| `dbt_run_staging` | `BashOperator` | Runs dbt models tagged `staging` cleans and standardises raw data |
 | `dbt_test_staging` | `BashOperator` | Runs dbt tests on staging models (not_null, unique, accepted_values) |
 | `dbt_run_intermediate` | `BashOperator` | Runs dbt models tagged `intermediate` — joins and enriches staging data |
-| `dbt_run_marts` | `BashOperator` | Runs dbt models tagged `marts` — produces business-facing fact and dimension tables |
+| `dbt_run_marts` | `BashOperator` | Runs dbt models tagged `marts` produces business-facing fact and dimension tables |
 | `dbt_test_marts` | `BashOperator` | Runs dbt tests on mart models to validate business logic |
 | `dbt_snapshot` | `BashOperator` | Runs dbt snapshots to track slowly changing dimensions (SCD Type 2) |
 
----
 
-## Project Structure
 
-```
-airflow_project/
-├── dags/
-│   └── beejanride/
-│       ├── beejanride_elt.py   # Main ELT pipeline DAG
-│       └── callbacks.py        # on_failure / on_success email callbacks
-├── config/
-│   └── airflow.cfg             # Airflow configuration
-├── plugins/                    # Custom Airflow plugins (empty)
-├── include/                    # Shared includes (empty)
-├── Dockerfile                  # Extends apache/airflow:3.0.6 with dbt-bigquery
-├── docker-compose.yaml         # Full Airflow stack (apiserver, scheduler, worker, etc.)
-└── .env                        # AIRFLOW_UID, DBT_PROJECT_DIR, DBT_KEYFILE
-```
-
----
-
-## Orchestration Design
-
-### Why CeleryExecutor?
-CeleryExecutor decouples task execution from scheduling. The scheduler queues tasks into Redis; Celery workers pick them up independently. This allows horizontal scaling of workers without touching the scheduler.
 
 ### Why one Airbyte connection for all tables?
-BeejanRide uses a single Airbyte connection (Postgres → BigQuery) that syncs all tables as streams. Triggering one sync job loads all tables atomically — no partial loads, no coordination overhead between per-table triggers.
+BeejanRide uses a single Airbyte connection (Postgres → BigQuery) that syncs all tables as streams. Triggering one sync job loads all tables atomically no partial loads, no coordination overhead between per-table triggers.
 
 ### Idempotency
 Idempotency ensures re-running a DAG for the same date produces the same result without duplicating data:
 
-- **Airbyte:** configured with incremental + deduplication sync mode. Re-triggering the same sync upserts records by primary key — no duplicates in BigQuery raw tables.
-- **dbt staging/intermediate/marts:** all models use `materialized = 'table'` or `materialized = 'incremental'` with `unique_key`. A re-run fully replaces or upserts — never appends blindly.
+- **Airbyte:** configured with incremental + deduplication sync mode. Re-triggering the same sync upserts records by primary key  no duplicates in BigQuery raw tables.
+- **dbt staging/intermediate/marts:** all models use `materialized = 'table'` or `materialized = 'incremental'` with `unique_key`. A re-run fully replaces or upserts never appends blindly.
 - **dbt snapshots:** use `strategy = 'timestamp'` with `updated_at` as the check column. Re-running a snapshot for the same logical date does not create duplicate history rows.
 - **Airflow:** `max_active_runs = 1` prevents concurrent runs for the same DAG. `depends_on_past = False` allows individual task retries without blocking the whole pipeline.
 
@@ -130,21 +89,6 @@ docker exec airflow_project-airflow-scheduler-1 \
 - On failure: email alert sent via Gmail SMTP with DAG name, task name, run ID, and error message
 - On DAG success: email notification sent with run summary
 
----
-
-## Screenshots
-
-> Add your screenshots to the `docs/screenshots/` folder and update the paths below.
-
-| Screenshot | Description |
-|------------|-------------|
-| ![DAG Graph](docs/screenshots/dag_graph.png) | DAG task graph in Airflow UI |
-| ![Successful Run](docs/screenshots/successful_run.png) | Example of a successful DAG run |
-| ![Failed Run](docs/screenshots/failed_run.png) | Example of a failed task with error |
-| ![Failure Email](docs/screenshots/failure_email.png) | Email notification on task failure |
-| ![Backfill](docs/screenshots/backfill.png) | Backfill execution across multiple dates |
-
----
 
 ## Setup
 
