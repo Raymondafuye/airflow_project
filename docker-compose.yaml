@@ -73,9 +73,9 @@ x-airflow-common:
     AIRFLOW__SMTP__SMTP_PORT: 587
     AIRFLOW__SMTP__SMTP_STARTTLS: 'True'
     AIRFLOW__SMTP__SMTP_SSL: 'False'
-    AIRFLOW__SMTP__SMTP_USER: raymondafuye@gmail.com
-    AIRFLOW__SMTP__SMTP_PASSWORD: 'qvavpelpsvnhjtgz'
-    AIRFLOW__SMTP__SMTP_MAIL_FROM: raymondafuye@gmail.com
+    AIRFLOW__SMTP__SMTP_USER: ${SMTP_USER}
+    AIRFLOW__SMTP__SMTP_PASSWORD: ${SMTP_PASSWORD}
+    AIRFLOW__SMTP__SMTP_MAIL_FROM: ${SMTP_USER}
     GOOGLE_APPLICATION_CREDENTIALS: '/opt/dbt/keyfile.json'
     # The following line can be used to set a custom config file, stored in the local config folder
     AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
@@ -173,7 +173,7 @@ services:
 
   airflow-worker:
     <<: *airflow-common
-    command: celery worker
+    command: celery worker --hostname=airflow-worker@%h
     healthcheck:
       # yamllint disable rule:line-length
       test:
@@ -188,7 +188,6 @@ services:
       # Required to handle warm shutdown of the celery workers properly
       # See https://airflow.apache.org/docs/docker-stack/entrypoint.html#signal-propagation
       DUMB_INIT_SETSID: "0"
-      AIRFLOW__CELERY__WORKER_HOSTNAME: "airflow-worker"
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
