@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dag_venv/
+
+# Airflow
+logs/
+config/airflow.cfg.bak
+config/simple_auth_manager_passwords.json.generated
+config/webserver_config.py
+dags/commit_or_bounce/
+
+# Secrets
+*.json
+!docs/**/*.json
+.env
+
+# Docker
+.docker/
+
+# OS
+.DS_Store
+Thumbs.db
