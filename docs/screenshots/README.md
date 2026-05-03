@@ -5,7 +5,7 @@ screenshots:
 - successful_run.png    — Example of a successful DAG run (all tasks green)
 ![alt text](image.png)
 - failed_run.png        — Example of a failed task (red task + error log)
-![alt text](image-1.png)
+![alt text](image-3.png)
 - failure_email.png     — Gmail notification received on task failure
 <img width="837" height="458" alt="image" src="https://github.com/user-attachments/assets/dd6cdc78-5031-4f81-8f40-11d47eb6a0d1" />
 - backfill.png          

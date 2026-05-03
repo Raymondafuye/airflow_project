@@ -1,7 +1,7 @@
 """
 BeejanRide ELT Orchestration DAG
 Pipeline: Airbyte Sync -> dbt Staging -> dbt Intermediate -> dbt Marts -> dbt Tests -> Snapshot
-Schedule: Daily at 06:00 UTC
+Schedule: Daily at 06:00 
 
 One Airbyte connection syncs all tables (cities, drivers, driver_status_events,
 payments, riders, trips) as streams from Postgres -> BigQuery.
@@ -29,8 +29,8 @@ default_args = {
     "email": ["raymondafuye@gmail.com"],
     "email_on_failure": False,
     "email_on_retry": False,
-    "retries": 2,
-    "retry_delay": timedelta(minutes=5),
+    "retries": 1,
+    "retry_delay": timedelta(minutes=1),
     "on_failure_callback": on_failure,
 }
 
