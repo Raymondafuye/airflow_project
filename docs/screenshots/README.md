@@ -1,6 +1,6 @@
 screenshots:
-
 - dag_graph.png         DAG task graph in Airflow UI
+  
 ![alt text](image-5.png)
 - successful_run.png    Example of a successful DAG run (all tasks green)
 ![alt text](image-4.png)
