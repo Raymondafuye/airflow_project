@@ -1,6 +1,11 @@
-FROM apache/airflow:3.0.6
+FROM apache/airflow:3.0.0
+
+USER airflow
+
+RUN pip install --no-cache-dir \
+    apache-airflow-providers-airbyte==4.0.0 \
+    apache-airflow-providers-http
 
 RUN pip install --no-cache-dir \
     dbt-bigquery==1.9.0 \
-    apache-airflow-providers-airbyte \
-    apache-airflow-providers-http
+    "protobuf<5.0"

@@ -21,13 +21,13 @@ AIRBYTE_CONN_ID = "airbyte_default"
 AIRBYTE_CONNECTION_UUID = "88cc0c20-ac95-4806-b1c7-0cceda7570bf"
 
 DBT_DIR = "/opt/dbt/myanalystdata"
-DBT_CMD = "dbt --no-use-colors"
+DBT_CMD = "/home/airflow/.local/bin/dbt --no-use-colors"
 
 default_args = {
     "owner": "beejanride",
     "depends_on_past": False,
     "email": ["raymondafuye@gmail.com"],
-    "email_on_failure": True,
+    "email_on_failure": False,
     "email_on_retry": False,
     "retries": 2,
     "retry_delay": timedelta(minutes=5),
